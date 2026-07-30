@@ -21,11 +21,17 @@ func main() {
 	}
 
 	// Connect to database
-	db, err := database.New(ctx, config.ConnectionString(conf))
+	pool, sqlDB, err := database.New(ctx, config.ConnectionString(conf))
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
-	defer db.Close()
+	defer pool.Close()
+	defer sqlDB.Close()
+
+	if err := database.RunMigration(sqlDB, "migrations"); err != nil {
+		log.Fatalf("Migration Failed %v", err)
+		os.Exit(1)
+	}
 
 	// Handle graceful shutdown
 	sigChan := make(chan os.Signal, 1)
