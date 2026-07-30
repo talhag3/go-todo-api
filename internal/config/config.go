@@ -55,6 +55,6 @@ func getEnvAsInt(key string, defaultValue int) int {
 }
 
 func ConnectionString(config *Config) string {
-	return fmt.Sprintf("postgres://%s:%s@localhost:%d/%s?sslmode=disable",
-		config.DBUser, config.DBPass, config.AppPort, config.DBName)
+	return fmt.Sprintf("postgres://%s:%s@localhost:5432/%s?sslmode=disable",
+		config.DBUser, config.DBPass, config.DBName)
 }
