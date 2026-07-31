@@ -9,8 +9,8 @@ import (
 
 	"github.com/talhag3/todoapp/internal/config"
 	"github.com/talhag3/todoapp/internal/database"
-	"github.com/talhag3/todoapp/internal/domain"
 	"github.com/talhag3/todoapp/internal/repository"
+	"github.com/talhag3/todoapp/internal/service"
 )
 
 func main() {
@@ -35,14 +35,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Create A Task
-
-	task := domain.Task{Title: "Learn the golang"}
 	taskRepo := repository.NewTaskRepository(pool)
-	err = taskRepo.Create(ctx, &task)
+	taskService := service.NewTaskService(taskRepo)
+
+	task, err := taskService.CreateTask(ctx, "Learn the go with layer architecture ..", "")
 	if err != nil {
 		log.Printf("Error creating the task %w", err)
 	}
+
+	log.Println("New Task is created", task.ID)
 
 	// Handle graceful shutdown
 	sigChan := make(chan os.Signal, 1)
