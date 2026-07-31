@@ -9,6 +9,8 @@ import (
 
 	"github.com/talhag3/todoapp/internal/config"
 	"github.com/talhag3/todoapp/internal/database"
+	"github.com/talhag3/todoapp/internal/domain"
+	"github.com/talhag3/todoapp/internal/repository"
 )
 
 func main() {
@@ -31,6 +33,15 @@ func main() {
 	if err := database.RunMigration(sqlDB, "migrations"); err != nil {
 		log.Fatalf("Migration Failed %v", err)
 		os.Exit(1)
+	}
+
+	// Create A Task
+
+	task := domain.Task{Title: "Learn the golang"}
+	taskRepo := repository.NewTaskRepository(pool)
+	err = taskRepo.Create(ctx, &task)
+	if err != nil {
+		log.Printf("Error creating the task %w", err)
 	}
 
 	// Handle graceful shutdown
