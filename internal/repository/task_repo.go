@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/talhag3/todoapp/internal/domain"
@@ -20,9 +21,16 @@ const GET_TASK_BY_QUERY = `
 		WHERE id = $1
 	`
 
+const UPDATE_TASK_QUERY = `
+		UPDATE tasks
+		SET title = $1, description = $2, done_at = $3, updated_at = $4
+		WHERE id = $5
+	`
+
 type TaskRepository interface {
 	Create(ctx context.Context, task *domain.Task) error
 	GetById(ctx context.Context, id int64) (*domain.Task, error)
+	Update(ctx context.Context, task *domain.Task) error
 }
 
 type taskRepo struct {
@@ -55,4 +63,20 @@ func (r *taskRepo) GetById(ctx context.Context, id int64) (*domain.Task, error) 
 		return nil, fmt.Errorf("get task by ID: %w", err)
 	}
 	return task, nil
+}
+
+func (r *taskRepo) Update(ctx context.Context, task *domain.Task) error {
+	_, err := r.pool.Exec(
+		ctx,
+		UPDATE_TASK_QUERY,
+		task.Title,
+		task.Description,
+		task.DoneAt,
+		time.Now(),
+		task.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("update task: %w", err)
+	}
+	return nil
 }

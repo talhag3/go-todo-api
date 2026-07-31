@@ -38,7 +38,7 @@ func main() {
 	taskRepo := repository.NewTaskRepository(pool)
 	taskService := service.NewTaskService(taskRepo)
 
-	task, err := taskService.GetTaskByID(ctx, 1)
+	task, err := taskService.UpdateTask(ctx, 1, "update : Learn golang ", "golang , fiber , sqlc , goose , pgx5. slog", true)
 	if err != nil {
 		log.Printf("Error creating the task %w", err)
 	}

@@ -11,6 +11,7 @@ import (
 type TaskService interface {
 	CreateTask(ctx context.Context, title, description string) (*domain.Task, error)
 	GetTaskByID(ctx context.Context, id int64) (*domain.Task, error)
+	UpdateTask(ctx context.Context, id int64, title, description string, done bool) (*domain.Task, error)
 }
 
 type taskService struct {
@@ -41,4 +42,30 @@ func (svc *taskService) CreateTask(ctx context.Context, title, description strin
 
 func (svc *taskService) GetTaskByID(ctx context.Context, id int64) (*domain.Task, error) {
 	return svc.taskRepo.GetById(ctx, id)
+}
+
+func (svc *taskService) UpdateTask(ctx context.Context, id int64, title, description string, done bool) (*domain.Task, error) {
+
+	task, err := svc.taskRepo.GetById(ctx, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	task.Title = title
+	task.Description = description
+	task.UpdatedAt = time.Now()
+
+	if done {
+		now := time.Now()
+		task.DoneAt = &now
+	} else {
+		task.DoneAt = nil
+	}
+
+	err = svc.taskRepo.Update(ctx, task)
+	if err != nil {
+		return nil, err
+	}
+	return task, nil
 }
