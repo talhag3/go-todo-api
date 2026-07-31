@@ -38,12 +38,12 @@ func main() {
 	taskRepo := repository.NewTaskRepository(pool)
 	taskService := service.NewTaskService(taskRepo)
 
-	task, err := taskService.CreateTask(ctx, "Learn the go with layer architecture ..", "")
+	task, err := taskService.GetTaskByID(ctx, 1)
 	if err != nil {
 		log.Printf("Error creating the task %w", err)
 	}
 
-	log.Println("New Task is created", task.ID)
+	log.Println("Task Tile :", task.Title)
 
 	// Handle graceful shutdown
 	sigChan := make(chan os.Signal, 1)

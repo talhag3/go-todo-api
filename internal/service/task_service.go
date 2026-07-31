@@ -10,6 +10,7 @@ import (
 
 type TaskService interface {
 	CreateTask(ctx context.Context, title, description string) (*domain.Task, error)
+	GetTaskByID(ctx context.Context, id int64) (*domain.Task, error)
 }
 
 type taskService struct {
@@ -36,4 +37,8 @@ func (svc *taskService) CreateTask(ctx context.Context, title, description strin
 	}
 
 	return task, nil
+}
+
+func (svc *taskService) GetTaskByID(ctx context.Context, id int64) (*domain.Task, error) {
+	return svc.taskRepo.GetById(ctx, id)
 }

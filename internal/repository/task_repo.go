@@ -14,8 +14,15 @@ const INSERT_TASK_QUERY = `
 		RETURNING id
 	`
 
+const GET_TASK_BY_QUERY = `
+		SELECT id, title, description, done_at, created_at, updated_at
+		FROM tasks
+		WHERE id = $1
+	`
+
 type TaskRepository interface {
 	Create(ctx context.Context, task *domain.Task) error
+	GetById(ctx context.Context, id int64) (*domain.Task, error)
 }
 
 type taskRepo struct {
@@ -32,4 +39,20 @@ func (r *taskRepo) Create(ctx context.Context, task *domain.Task) error {
 		return fmt.Errorf("create task: %w", err)
 	}
 	return nil
+}
+
+func (r *taskRepo) GetById(ctx context.Context, id int64) (*domain.Task, error) {
+	task := &domain.Task{}
+	err := r.pool.QueryRow(ctx, GET_TASK_BY_QUERY, id).Scan(
+		&task.ID,
+		&task.Title,
+		&task.Description,
+		&task.DoneAt,
+		&task.CreatedAt,
+		&task.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("get task by ID: %w", err)
+	}
+	return task, nil
 }
