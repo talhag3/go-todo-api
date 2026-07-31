@@ -27,10 +27,13 @@ const UPDATE_TASK_QUERY = `
 		WHERE id = $5
 	`
 
+const DELETE_TASK_QUERY = `DELETE FROM tasks WHERE id = $1`
+
 type TaskRepository interface {
 	Create(ctx context.Context, task *domain.Task) error
 	GetById(ctx context.Context, id int64) (*domain.Task, error)
 	Update(ctx context.Context, task *domain.Task) error
+	Delete(ctx context.Context, id int64) error
 }
 
 type taskRepo struct {
@@ -77,6 +80,15 @@ func (r *taskRepo) Update(ctx context.Context, task *domain.Task) error {
 	)
 	if err != nil {
 		return fmt.Errorf("update task: %w", err)
+	}
+	return nil
+}
+
+func (r *taskRepo) Delete(ctx context.Context, id int64) error {
+
+	_, err := r.pool.Exec(ctx, DELETE_TASK_QUERY, id)
+	if err != nil {
+		return fmt.Errorf("delete task: %w", err)
 	}
 	return nil
 }
