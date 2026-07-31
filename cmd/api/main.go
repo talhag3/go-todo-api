@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -38,9 +39,13 @@ func main() {
 	taskRepo := repository.NewTaskRepository(pool)
 	taskService := service.NewTaskService(taskRepo)
 
-	err = taskService.DeleteTask(ctx, 1)
+	tasks, err := taskService.GetAllTasks(ctx)
 	if err != nil {
 		log.Printf("Error creating the task %w", err)
+	}
+
+	for _, val := range tasks {
+		fmt.Println("Value:", val)
 	}
 
 	// Handle graceful shutdown

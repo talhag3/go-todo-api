@@ -27,6 +27,12 @@ const UPDATE_TASK_QUERY = `
 		WHERE id = $5
 	`
 
+const GET_ALL_TASKS_QUERY = `
+	SELECT id, title, description, done_at, created_at, updated_at
+	FROM tasks
+	ORDER BY created_at DESC
+`
+
 const DELETE_TASK_QUERY = `DELETE FROM tasks WHERE id = $1`
 
 type TaskRepository interface {
@@ -34,6 +40,7 @@ type TaskRepository interface {
 	GetById(ctx context.Context, id int64) (*domain.Task, error)
 	Update(ctx context.Context, task *domain.Task) error
 	Delete(ctx context.Context, id int64) error
+	GetAll(ctx context.Context) ([]*domain.Task, error)
 }
 
 type taskRepo struct {
@@ -91,4 +98,30 @@ func (r *taskRepo) Delete(ctx context.Context, id int64) error {
 		return fmt.Errorf("delete task: %w", err)
 	}
 	return nil
+}
+
+func (r *taskRepo) GetAll(ctx context.Context) ([]*domain.Task, error) {
+	rows, err := r.pool.Query(ctx, GET_ALL_TASKS_QUERY)
+	if err != nil {
+		return nil, fmt.Errorf("get all tasks: %w", err)
+	}
+	defer rows.Close()
+
+	var tasks []*domain.Task
+	for rows.Next() {
+		task := &domain.Task{}
+		err := rows.Scan(
+			&task.ID,
+			&task.Title,
+			&task.Description,
+			&task.DoneAt,
+			&task.CreatedAt,
+			&task.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scan task: %w", err)
+		}
+		tasks = append(tasks, task)
+	}
+	return tasks, nil
 }

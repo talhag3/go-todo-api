@@ -13,6 +13,7 @@ type TaskService interface {
 	GetTaskByID(ctx context.Context, id int64) (*domain.Task, error)
 	UpdateTask(ctx context.Context, id int64, title, description string, done bool) (*domain.Task, error)
 	DeleteTask(ctx context.Context, id int64) error
+	GetAllTasks(ctx context.Context) ([]*domain.Task, error)
 }
 
 type taskService struct {
@@ -73,4 +74,8 @@ func (svc *taskService) UpdateTask(ctx context.Context, id int64, title, descrip
 
 func (svc *taskService) DeleteTask(ctx context.Context, id int64) error {
 	return svc.taskRepo.Delete(ctx, id)
+}
+
+func (svc *taskService) GetAllTasks(ctx context.Context) ([]*domain.Task, error) {
+	return svc.taskRepo.GetAll(ctx)
 }
