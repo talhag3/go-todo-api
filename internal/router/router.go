@@ -17,5 +17,5 @@ func Register(d Deps) {
 
 	tasks := api.Group("/tasks")
 
-	tasks.Get("/test", d.TaskH.Check)
+	tasks.Post("/", d.TaskH.Create)
 }
