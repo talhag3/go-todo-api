@@ -2,16 +2,17 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
+	"github.com/gofiber/fiber/v3"
 	"github.com/talhag3/todoapp/internal/config"
 	"github.com/talhag3/todoapp/internal/database"
-	"github.com/talhag3/todoapp/internal/repository"
-	"github.com/talhag3/todoapp/internal/service"
+	"github.com/talhag3/todoapp/internal/handler"
+	"github.com/talhag3/todoapp/internal/router"
 )
 
 func main() {
@@ -28,6 +29,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
+	log.Println("Connect to the Database")
 	defer pool.Close()
 	defer sqlDB.Close()
 
@@ -36,17 +38,26 @@ func main() {
 		os.Exit(1)
 	}
 
-	taskRepo := repository.NewTaskRepository(pool)
-	taskService := service.NewTaskService(taskRepo)
+	// taskRepo := repository.NewTaskRepository(pool)
+	// taskService := service.NewTaskService(taskRepo)
 
-	tasks, err := taskService.GetAllTasks(ctx)
-	if err != nil {
-		log.Printf("Error creating the task %w", err)
-	}
+	taskH := handler.NewTaskHandler()
 
-	for _, val := range tasks {
-		fmt.Println("Value:", val)
-	}
+	// Fiber
+
+	app := fiber.New(fiber.Config{})
+
+	router.Register(router.Deps{
+		App:   app,
+		TaskH: taskH,
+	})
+
+	// Start Fiber server in a goroutine
+	go func() {
+		if err := app.Listen(":" + strconv.Itoa(conf.AppPort)); err != nil {
+			log.Fatalf("Failed to start Fiber server: %v", err)
+		}
+	}()
 
 	// Handle graceful shutdown
 	sigChan := make(chan os.Signal, 1)
@@ -54,15 +65,14 @@ func main() {
 	// LISTEN FOR OS SIGNALS
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	// START A BACKGROUND WORKER (Goroutine)
-	go func() {
-		<-sigChan // Wait for signal
-		cancel()  // Cancel context
-		log.Println("Shutting down gracefully...")
-	}()
+	<-sigChan // Wait for signal
+	cancel()  // Cancel context
+	log.Println("Shutting down gracefully...")
 
-	log.Println("Database connected successfully")
-	<-ctx.Done() // Wait for context cancellation
+	// Wait for Fiber to shutdown
+	if err := app.Shutdown(); err != nil {
+		log.Fatalf("Failed to shutdown Fiber server: %v", err)
+	}
 }
 
 /*
