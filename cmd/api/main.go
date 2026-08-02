@@ -12,6 +12,7 @@ import (
 	"github.com/talhag3/todoapp/internal/config"
 	"github.com/talhag3/todoapp/internal/database"
 	"github.com/talhag3/todoapp/internal/handler"
+	"github.com/talhag3/todoapp/internal/pkg/response"
 	"github.com/talhag3/todoapp/internal/repository"
 	"github.com/talhag3/todoapp/internal/router"
 	"github.com/talhag3/todoapp/internal/service"
@@ -47,7 +48,9 @@ func main() {
 
 	// Fiber
 
-	app := fiber.New(fiber.Config{})
+	app := fiber.New(fiber.Config{
+		ErrorHandler: response.ErrorHandler,
+	})
 
 	router.Register(router.Deps{
 		App:   app,
