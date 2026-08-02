@@ -18,4 +18,8 @@ func Register(d Deps) {
 	tasks := api.Group("/tasks")
 
 	tasks.Post("/", d.TaskH.Create)
+	tasks.Get("/", d.TaskH.GetTasks)
+	tasks.Get("/:id", d.TaskH.GetTask)
+	tasks.Patch("/:id", d.TaskH.EditTask)
+	tasks.Delete("/:id", d.TaskH.DeleteTask)
 }
