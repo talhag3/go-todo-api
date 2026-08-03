@@ -3,53 +3,113 @@ package apperror
 import (
 	"errors"
 	"fmt"
-	"net/http"
 )
 
-// AppError is the canonical error type used across the app.
-// Each instance carries: kind, user-facing message, HTTP status, and an optional wrapped cause.
+type ErrorCode string
+
+const (
+	CodeNotFound     ErrorCode = "NOT_FOUND"
+	CodeValidation   ErrorCode = "VALIDATION_ERROR"
+	CodeUnauthorized ErrorCode = "UNAUTHORIZED"
+	CodeForbidden    ErrorCode = "FORBIDDEN"
+	CodeConflict     ErrorCode = "CONFLICT"
+	CodeBadRequest   ErrorCode = "BAD_REQUEST"
+	CodeInternal     ErrorCode = "INTERNAL_ERROR"
+)
+
+var statusForCode = map[ErrorCode]int{
+	CodeNotFound:     404,
+	CodeValidation:   422,
+	CodeUnauthorized: 401,
+	CodeForbidden:    403,
+	CodeConflict:     409,
+	CodeBadRequest:   400,
+	CodeInternal:     500,
+}
+
 type AppError struct {
-	Kind    string // "not_found", "validation", "unauthorized", "conflict", "internal"
-	Message string // safe to expose to client
-	Status  int
-	Cause   error // underlying error, never serialized
+	Code       ErrorCode
+	Message    string
+	StatusCode int
+	Details    map[string]string
+	Err        error
 }
 
 func (e *AppError) Error() string {
-	if e.Cause != nil {
-		return fmt.Sprintf("%s: %s: %v", e.Kind, e.Message, e.Cause)
+	if e.Err != nil {
+		return fmt.Sprintf("%s: %v", e.Message, e.Err)
 	}
-	return fmt.Sprintf("%s: %s", e.Kind, e.Message)
+	return e.Message
 }
 
-func (e *AppError) Unwrap() error { return e.Cause }
-
-func New(kind, message string, status int, cause error) *AppError {
-	return &AppError{Kind: kind, Message: message, Status: status, Cause: cause}
+func (e *AppError) Unwrap() error {
+	return e.Err
 }
 
-// Common constructors
-func NotFound(msg string) *AppError   { return New("not_found", msg, http.StatusNotFound, nil) }
-func Validation(msg string) *AppError { return New("validation", msg, http.StatusBadRequest, nil) }
-func Unauthorized(msg string) *AppError {
-	return New("unauthorized", msg, http.StatusUnauthorized, nil)
-}
-func Forbidden(msg string) *AppError { return New("forbidden", msg, http.StatusForbidden, nil) }
-func Conflict(msg string) *AppError  { return New("conflict", msg, http.StatusConflict, nil) }
-func Internal(msg string, cause error) *AppError {
-	return New("internal", msg, http.StatusInternalServerError, cause)
-}
-
-// Map converts any error into an *AppError.
-// Default: internal server error (avoid leaking details).
-func Map(err error) *AppError {
-	if err == nil {
-		return nil
+func NotFound(message string) *AppError {
+	return &AppError{
+		Code:       CodeNotFound,
+		Message:    message,
+		StatusCode: statusForCode[CodeValidation],
 	}
-	var ae *AppError
-	if errors.As(err, &ae) {
-		return ae
+}
+
+func Validation(message string, details map[string]string) *AppError {
+	return &AppError{
+		Code:       CodeValidation,
+		Message:    message,
+		StatusCode: statusForCode[CodeValidation],
+		Details:    details,
 	}
-	// Fallback: never expose raw error to clients.
-	return Internal("something went wrong", err)
+}
+
+func Unauthorized(message string) *AppError {
+	return &AppError{
+		Code:       CodeUnauthorized,
+		Message:    message,
+		StatusCode: statusForCode[CodeUnauthorized],
+	}
+}
+
+func Forbidden(message string) *AppError {
+	return &AppError{
+		Code:       CodeForbidden,
+		Message:    message,
+		StatusCode: statusForCode[CodeForbidden],
+	}
+}
+
+func Conflict(message string) *AppError {
+	return &AppError{
+		Code:       CodeConflict,
+		Message:    message,
+		StatusCode: statusForCode[CodeConflict],
+	}
+}
+
+func BadRequest(message string) *AppError {
+	return &AppError{
+		Code:       CodeBadRequest,
+		Message:    message,
+		StatusCode: statusForCode[CodeBadRequest],
+	}
+}
+
+func Internal(err error) *AppError {
+	return &AppError{
+		Code:       CodeInternal,
+		Message:    "something went wrong, please try again later",
+		StatusCode: statusForCode[CodeInternal],
+		Err:        err,
+	}
+}
+
+// As is a small convenience wrapper around the standard library's
+// errors.As. Given any error, it tells you: "is this (or does it wrap)
+// an *AppError?" and hands you the typed value if so.
+
+func As(err error) (*AppError, bool) {
+	var appErr *AppError
+	ok := errors.As(err, &appErr)
+	return appErr, ok
 }

@@ -49,7 +49,9 @@ func main() {
 	// Fiber
 
 	app := fiber.New(fiber.Config{
-		ErrorHandler: response.ErrorHandler,
+		ErrorHandler: func(c fiber.Ctx, err error) error {
+			return response.Error(c, err)
+		},
 	})
 
 	router.Register(router.Deps{
