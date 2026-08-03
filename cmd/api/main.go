@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 	"github.com/talhag3/todoapp/internal/config"
 	"github.com/talhag3/todoapp/internal/database"
 	"github.com/talhag3/todoapp/internal/handler"
+	"github.com/talhag3/todoapp/internal/pkg/pkg/logger"
 	"github.com/talhag3/todoapp/internal/pkg/response"
 	"github.com/talhag3/todoapp/internal/repository"
 	"github.com/talhag3/todoapp/internal/router"
@@ -27,17 +29,26 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
+	log := logger.New(logger.Config{
+		Level:     "debug",
+		Format:    "json", // "json" in prod, "text" while developing
+		AddSource: true,
+	})
+
+	slog.SetDefault(log)
+
 	// Connect to database
 	pool, sqlDB, err := database.New(ctx, config.ConnectionString(conf))
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		log.Error("failed to connect to database", slog.String("err", err.Error()))
+		os.Exit(1)
 	}
-	log.Println("Connect to the Database")
+	slog.Info("Connect to the Database")
 	defer pool.Close()
 	defer sqlDB.Close()
 
 	if err := database.RunMigration(sqlDB, "migrations"); err != nil {
-		log.Fatalf("Migration Failed %v", err)
+		slog.Error("Migration Failed ", slog.String("err", err.Error()))
 		os.Exit(1)
 	}
 
@@ -62,7 +73,7 @@ func main() {
 	// Start Fiber server in a goroutine
 	go func() {
 		if err := app.Listen(":" + strconv.Itoa(conf.AppPort)); err != nil {
-			log.Fatalf("Failed to start Fiber server: %v", err)
+			log.Error("Failed to start Fiber server", slog.String("err", err.Error()))
 		}
 	}()
 
@@ -74,31 +85,11 @@ func main() {
 
 	<-sigChan // Wait for signal
 	cancel()  // Cancel context
-	log.Println("Shutting down gracefully...")
+	log.Info("Shutting down gracefully...")
 
 	// Wait for Fiber to shutdown
 	if err := app.Shutdown(); err != nil {
-		log.Fatalf("Failed to shutdown Fiber server: %v", err)
+		log.Error("Failed to shutdown Fiber server:", slog.String("err", err.Error()))
+		os.Exit(1)
 	}
 }
-
-/*
-Shutting down gracefully
-
-1. OS sends SIGINT
-   ↓
-2. signal.Notify puts SIGINT in sigChan
-   ↓
-3. Goroutine receives SIGINT from sigChan
-   ↓
-4. Goroutine calls cancel()
-   ↓
-5. ctx.Done() channel gets a value
-   ↓
-6. Main thread unblocks from <-ctx.Done()
-   ↓
-7. defer db.Close() runs (closes DB connections)
-   ↓
-8. App exits cleanly
-
-*/
