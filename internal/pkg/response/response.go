@@ -16,8 +16,8 @@ type Meta struct {
 
 type successBody struct {
 	Success bool `json:"success"`
-	Data    any  `json:"data,ommitempty"`
-	Meta    any  `json:"meta,ommitempty"`
+	Data    any  `json:"data,omitempty"`
+	Meta    any  `json:"meta,omitempty"`
 }
 
 type errorBody struct {
