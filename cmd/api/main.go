@@ -52,8 +52,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	taskRepo := repository.NewTaskRepository(pool)
-	taskService := service.NewTaskService(taskRepo)
+	taskRepo := repository.NewTaskRepository(pool, log)
+	taskService := service.NewTaskService(taskRepo, log)
 
 	taskH := handler.NewTaskHandler(taskService)
 

@@ -50,7 +50,7 @@ func NotFound(message string) *AppError {
 	return &AppError{
 		Code:       CodeNotFound,
 		Message:    message,
-		StatusCode: statusForCode[CodeValidation],
+		StatusCode: statusForCode[CodeNotFound],
 	}
 }
 
