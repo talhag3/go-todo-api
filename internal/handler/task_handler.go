@@ -17,12 +17,6 @@ func NewTaskHandler(svc service.TaskService) *TaskHandler {
 	return &TaskHandler{svc: svc}
 }
 
-type editTaskReq struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	DoneAt      *bool  `json:"done_at"` // Accepts true/false
-}
-
 func (h *TaskHandler) Create(c fiber.Ctx) error {
 	req := dto.TaskCreateRequest{}
 
@@ -98,7 +92,7 @@ func (h *TaskHandler) EditTask(c fiber.Ctx) error {
 		doneAt = *req.DoneAt
 	}
 
-	updatedTask, err := h.svc.UpdateTask(c, taskID, "", req.Description, doneAt)
+	updatedTask, err := h.svc.UpdateTask(c, taskID, req.Title, req.Description, doneAt)
 
 	if err != nil {
 		return response.Error(c, err)
