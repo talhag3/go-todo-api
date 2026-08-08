@@ -54,25 +54,15 @@ func (h *TaskHandler) GetTask(c fiber.Ctx) error {
 }
 
 func (h *TaskHandler) GetTasks(c fiber.Ctx) error {
-
 	tasks, err := h.svc.GetAllTasks(c)
 
 	if err != nil {
-		return c.Status(fiber.ErrBadGateway.Code).JSON(fiber.Map{
-			"success": false,
-			"message": "Internal Server Issue",
-			"errors":  err,
-		})
+		return response.Error(c, err)
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-		"message": "Tasks retrieved successfully",
-		"data":    tasks,
-	})
+	return response.OK(c, tasks)
 }
 
 func (h *TaskHandler) EditTask(c fiber.Ctx) error {
-
 	taskID, err := validate.ParamInt64(c, "id")
 	if err != nil {
 		return response.Error(c, err)

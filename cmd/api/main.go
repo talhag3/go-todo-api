@@ -13,7 +13,8 @@ import (
 	"github.com/talhag3/todoapp/internal/config"
 	"github.com/talhag3/todoapp/internal/database"
 	"github.com/talhag3/todoapp/internal/handler"
-	"github.com/talhag3/todoapp/internal/pkg/pkg/logger"
+	"github.com/talhag3/todoapp/internal/middleware"
+	"github.com/talhag3/todoapp/internal/pkg/logger"
 	"github.com/talhag3/todoapp/internal/pkg/response"
 	"github.com/talhag3/todoapp/internal/repository"
 	"github.com/talhag3/todoapp/internal/router"
@@ -64,6 +65,8 @@ func main() {
 			return response.Error(c, err)
 		},
 	})
+
+	app.Use(middleware.RequestLogger(log))
 
 	router.Register(router.Deps{
 		App:   app,
